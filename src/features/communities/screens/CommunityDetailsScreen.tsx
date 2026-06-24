@@ -1,7 +1,13 @@
-import { RouteProp, useRoute } from "@react-navigation/native";
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import React from "react";
 import {
   ActivityIndicator,
+  Button,
   FlatList,
   StyleSheet,
   Text,
@@ -22,6 +28,8 @@ export const CommunityDetailsScreen = (): React.JSX.Element => {
   const route = useRoute<CommunityDetailsRouteProp>();
 
   const { communityId, communityName } = route.params;
+
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
 
   const { data, isLoading, isError } = usePosts(communityId);
 
@@ -53,6 +61,15 @@ export const CommunityDetailsScreen = (): React.JSX.Element => {
           <Text style={styles.subtitle}>Community ID: {communityId}</Text>
 
           <Text style={styles.sectionTitle}>Posts</Text>
+
+          <Button
+            title="Create Post"
+            onPress={() =>
+              navigation.navigate(ROUTES.CREATE_POST, {
+                communityId,
+              })
+            }
+          />
         </View>
       }
       contentContainerStyle={styles.content}

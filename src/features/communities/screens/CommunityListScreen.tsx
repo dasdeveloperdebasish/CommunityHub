@@ -1,7 +1,9 @@
 import { AppStackParamList } from "@/core/navigation/types";
+import { CommunityCard } from "@/features/communities/components/CommunityCard";
+import { useCommunities } from "@/features/communities/queries/useCommunities";
 import { ROUTES } from "@/shared/constants/routes";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,13 +13,14 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { CommunityCard } from "../components/CommunityCard";
-import { useCommunities } from "../queries/useCommunities";
+
+const PAGE_SIZE = 4;
 
 export const CommunityListScreen = (): React.JSX.Element => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, refetch, isRefetching } = useCommunities();
 
@@ -28,6 +31,32 @@ export const CommunityListScreen = (): React.JSX.Element => {
       ) ?? []
     );
   }, [data, searchQuery]);
+
+  const paginatedCommunities = useMemo(() => {
+    return filteredCommunities.slice(0, page * PAGE_SIZE);
+  }, [filteredCommunities, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const loadMore = (): void => {
+    if (page * PAGE_SIZE < filteredCommunities.length) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const renderFooter = (): React.JSX.Element | null => {
+    if (paginatedCommunities.length >= filteredCommunities.length) {
+      return null;
+    }
+
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator />
+      </View>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -55,7 +84,7 @@ export const CommunityListScreen = (): React.JSX.Element => {
       />
 
       <FlatList
-        data={filteredCommunities}
+        data={paginatedCommunities}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <CommunityCard
@@ -71,9 +100,12 @@ export const CommunityListScreen = (): React.JSX.Element => {
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
         removeClippedSubviews
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
         windowSize={10}
       />
     </View>
@@ -98,6 +130,11 @@ const styles = StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+  },
+
+  footer: {
+    paddingVertical: 16,
     alignItems: "center",
   },
 });
