@@ -1,15 +1,10 @@
-import { Text, View } from "react-native";
+import { RootNavigator } from "@/core/navigation/RootNavigator";
+import { AppProviders } from "@/core/providers/AppProviders";
 
-export default function App() {
+export default function App(): React.JSX.Element {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>CommunityHub</Text>
-    </View>
+    <AppProviders>
+      <RootNavigator />
+    </AppProviders>
   );
 }
