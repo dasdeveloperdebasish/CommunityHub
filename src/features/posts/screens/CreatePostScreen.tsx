@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -10,6 +10,7 @@ import {
   createPostSchema,
   CreatePostSchema,
 } from "@/features/posts/schemas/createPostSchema";
+import { draftStorage } from "@/features/posts/storage/draftStorage";
 import { ROUTES } from "@/shared/constants/routes";
 
 type CreatePostRouteProp = RouteProp<
@@ -29,6 +30,8 @@ export const CreatePostScreen = (): React.JSX.Element => {
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CreatePostSchema>({
     resolver: zodResolver(createPostSchema),
@@ -38,6 +41,36 @@ export const CreatePostScreen = (): React.JSX.Element => {
     },
   });
 
+  const title = watch("title");
+  const body = watch("body");
+
+  useEffect(() => {
+    const loadDraft = async (): Promise<void> => {
+      const draft = await draftStorage.getDraft();
+
+      if (!draft) {
+        return;
+      }
+
+      setValue("title", draft.title);
+
+      setValue("body", draft.body);
+    };
+
+    void loadDraft();
+  }, [setValue]);
+
+  useEffect(() => {
+    const saveDraft = async (): Promise<void> => {
+      await draftStorage.saveDraft({
+        title,
+        body,
+      });
+    };
+
+    void saveDraft();
+  }, [title, body]);
+
   const onSubmit = async (values: CreatePostSchema): Promise<void> => {
     try {
       await mutateAsync({
@@ -45,6 +78,8 @@ export const CreatePostScreen = (): React.JSX.Element => {
         title: values.title,
         body: values.body,
       });
+
+      await draftStorage.clearDraft();
 
       Alert.alert("Success", "Post created successfully");
 
@@ -124,7 +159,7 @@ const styles = StyleSheet.create({
   },
 
   error: {
-    color: "red",
+    color: "#EF4444",
     marginBottom: 12,
   },
 });
